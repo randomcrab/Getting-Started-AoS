@@ -24,12 +24,10 @@ namespace Game1
     public enum ParticleID : byte { Inactive, Fire, Rain }
 
     public struct Particle
-    {   //an entity can be a struct too, w/ composition
+    {   //uses physics struct as component
         public Physics physics;
         public Color color;
         public float alpha;
-        public float scale;
-        public byte behavior;
         public ParticleID Id;
         public short age;
     }
@@ -74,9 +72,7 @@ namespace Game1
             //set defaults for particle
             P.alpha = 1.0f;
             P.age = 0;
-            P.behavior = 0;
             P.color = Color.White;
-            P.scale = 1.0f;
             //pass the ID
             P.Id = ID;
             //setup particle based on ID
@@ -103,16 +99,15 @@ namespace Game1
         }
 
         public static void Update()
-        {
-            //step 1 - update/animate all the particles
+        {   //step 1 - update/animate all the particles
             //step 2 - randomly spawn fire and rain particles
 
-
-            //increase the wind counter
+            //increase wind counter
             windCounter += 0.015f;
             //get left or right horizontal value for wind
             float wind = (float)Math.Sin(windCounter) * 0.03f;
-            //store values for this heap data
+
+            //store locals for this heap data
             int width = Data.GDM.PreferredBackBufferWidth;
             int height = Data.GDM.PreferredBackBufferHeight;
 
@@ -121,8 +116,7 @@ namespace Game1
             for (int i = 0; i < s; i++)
             {   //particle active, age + check id / behavior
                 if (data[i].Id > 0)
-                {
-                    //create a local copy
+                {   //create a local copy
                     Particle P = data[i];
 
                     //age active particles
@@ -132,7 +126,6 @@ namespace Game1
                     {   //fire rises, gravity does not affect it
                         P.physics.accY -= gravity;
                         P.physics.accY -= 0.05f;
-
                         //has longer life than rain
                         if (P.age > 300)
                         { P.Id = ParticleID.Inactive; }
@@ -143,6 +136,7 @@ namespace Game1
                         //has shorter life than fire
                         if (P.age > 200)
                         { P.Id = ParticleID.Inactive; }
+                        //use behavior field here for additional states
                     }
 
                     //add gravity to push down
@@ -179,16 +173,14 @@ namespace Game1
                 }
             }
 
-            //step 2 - randomly spawn rain + fire
             for (int i = 0; i < 100; i++)
-            {
+            {   //step 2 - randomly spawn rain + fire
                 Spawn(ParticleID.Rain,
                     Rand.Next(0, width),
                     0, 0, 0);
-
                 Spawn(ParticleID.Fire,
                     Rand.Next(0, width),
-                    height - 0, 0, 0);
+                    height, 0, 0);
             }
         }
 
@@ -210,7 +202,7 @@ namespace Game1
                         data[i].color * data[i].alpha,
                         0,
                         Vector2.Zero,
-                        1.0f,
+                        1.0f, //scale
                         SpriteEffects.None,
                         i * 0.00001f);
                 }   //layer particles based on index, as simple example
@@ -219,8 +211,6 @@ namespace Game1
             Data.SB.End();
         }
     }
-
-
 
     public class Game1 : Game
     {
@@ -236,7 +226,6 @@ namespace Game1
             Data.GAME = this;
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
-            Data.GAME.Window.Title = "Monogame AoS Particle Example";
         }
 
         protected override void Initialize() { base.Initialize(); }
@@ -263,12 +252,6 @@ namespace Game1
             ParticleSystem.Draw();
             timer.Stop();
             ticks = timer.ElapsedTicks;
-            /*
-            Console.WriteLine(
-                "ticks:" + ticks + 
-                " total: " + ParticleSystem.active +
-                "/" + ParticleSystem.size);
-            */
             Data.GAME.Window.Title = "AoS Particle System Example by @_mrgrak"
                 + "- ticks per frame:" + ticks +
                 " - total particles: " + ParticleSystem.active +
